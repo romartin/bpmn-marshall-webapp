@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.roger600</groupId>
+  <artifactId>bpmn-marshall-webapp</artifactId>
+  <packaging>war</packaging>
+  <version>1.0-SNAPSHOT</version>
+
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <jaxb.version>2.2.12</jaxb.version>
+    <version.org.kie.stunner.bpmn.emf>7.25.0-SNAPSHOT</version.org.kie.stunner.bpmn.emf>
+    <version.org.eclipse.emf.gwt>2.9.0</version.org.eclipse.emf.gwt>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gwt</artifactId>
+        <version>2.8.2</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>org.kie.workbench.stunner</groupId>
+      <artifactId>kie-wb-common-stunner-bpmn-emf</artifactId>
+      <version>${version.org.kie.stunner.bpmn.emf}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.kie.workbench.stunner</groupId>
+      <artifactId>kie-wb-common-stunner-bpmn-emf</artifactId>
+      <version>${version.org.kie.stunner.bpmn.emf}</version>
+      <classifier>sources</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipselabs</groupId>
+      <artifactId>org.eclipse.emf.gwt.ecore</artifactId>
+      <version>${version.org.eclipse.emf.gwt}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipselabs</groupId>
+      <artifactId>org.eclipse.emf.gwt.ecore</artifactId>
+      <version>${version.org.eclipse.emf.gwt}</version>
+      <classifier>sources</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipselabs</groupId>
+      <artifactId>org.eclipse.emf.gwt.common</artifactId>
+      <version>${version.org.eclipse.emf.gwt}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipselabs</groupId>
+      <artifactId>org.eclipse.emf.gwt.common</artifactId>
+      <version>${version.org.eclipse.emf.gwt}</version>
+      <classifier>sources</classifier>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-servlet</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-user</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-dev</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <!-- Output classes directly into the webapp, so that IDEs and "mvn process-classes" update them in DevMode -->
+    <!--    <outputDirectory>${project.build.directory}/${project.build.finalName}/WEB-INF/classes</outputDirectory>-->
+    <outputDirectory>src/main/webapp/WEB-INF/classes</outputDirectory>
+    <finalName>${project.artifactId}</finalName>
+
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>gwt-maven-plugin</artifactId>
+        <version>2.8.2</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>generateAsync</goal>
+              <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <strict>true</strict>
+          <module>org.roger600.bpmn.marshall.App</module>
+          <style>PRETTY</style>
+          <compileReport>true</compileReport>
+          <soycDetailed>true</soycDetailed>
+          <logLevel>INFO</logLevel>
+          <noServer>false</noServer>
+          <superDevMode>true</superDevMode>
+          <runTarget>App.html</runTarget>
+          <hostedWebapp>src/main/webapp</hostedWebapp>
+          <workDir>${project.build.directory}</workDir>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>

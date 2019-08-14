@@ -1,0 +1,9 @@
+.idea
+*.iml
+target/
+
+**/webapp/app/
+**/gwt-unitCache/
+**/webapp/WEB-INF/classes/
+**/webapp/WEB-INF/lib/
+
