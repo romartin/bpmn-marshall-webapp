@@ -28,11 +28,17 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextArea;
+import com.google.gwt.xml.client.CDATASection;
 import com.google.gwt.xml.client.Document;
 import com.google.gwt.xml.client.Element;
 import com.google.gwt.xml.client.Node;
 import com.google.gwt.xml.client.XMLParser;
 import org.eclipse.bpmn2.DocumentRoot;
+import org.eclipse.bpmn2.ExtensionAttributeValue;
+import org.eclipse.bpmn2.FlowElement;
+import org.eclipse.bpmn2.Process;
+import org.eclipse.bpmn2.impl.TaskImpl;
+import org.eclipse.emf.common.util.EList;
 import org.kie.workbench.common.stunner.bpmn.client.emf.Bpmn2Marshalling;
 
 public class App implements EntryPoint {
@@ -41,12 +47,11 @@ public class App implements EntryPoint {
         final Button unmarshallButton = new Button("Unmarshall");
         final Button marshallButton = new Button("Marshall");
         final Button testButton = new Button("Test");
-        testButton.setVisible(false);
+        testButton.setVisible(true);
         final TextArea codeField = new TextArea();
         final Label textToServerLabel = new Label();
         final HTML serverResponseLabel = new HTML();
-        //codeField.setText(TEXT);
-        codeField.setText(SIMPLE_PROCESS);
+        codeField.setText(ROGER_SIMPLE_TASK);
         codeField.setWidth("90%");
         codeField.setVisibleLines(20);
 
@@ -102,6 +107,7 @@ public class App implements EntryPoint {
 
             private void doMarshall() {
                 GWT.log("Doing marshall");
+                // testSetTaskName();
                 String raw = Bpmn2Marshalling.marshall(lastRoot);
                 setResultText(raw);
                 setLastRoot(null);
@@ -118,7 +124,8 @@ public class App implements EntryPoint {
                 // Unmarshall.
                 DocumentRoot result = Bpmn2Marshalling.unmarshall(text);
                 setLastRoot(result);
-                String resultRaw = Bpmn2Marshalling.testString(lastRoot);
+                // testGetTaskName();
+                String resultRaw = AppUtils.testString(lastRoot);
                 setResultText(resultRaw);
             }
 
@@ -134,6 +141,60 @@ public class App implements EntryPoint {
                 serverResponseLabel.addStyleName("serverResponseLabelError");
                 textToServerLabel.setText(resultRaw);
             }
+
+            private TaskImpl getTask() {
+                Process process = AppUtils.getProcess(lastRoot);
+                EList<FlowElement> flowElements = process.getFlowElements();
+                for (FlowElement flowElement : flowElements) {
+                    if (flowElement instanceof TaskImpl) {
+                        return (TaskImpl) flowElement;
+                    }
+                }
+                return null;
+            }
+
+            private void testSetTaskName() {
+                if (null != lastRoot) {
+                    TaskImpl task = getTask();
+                    if (null != task) {
+                        String elementname = "";
+                        EList<ExtensionAttributeValue> extensionValues = task.getExtensionValues();
+                        if (null != extensionValues) {
+                            elementname = AppUtils.getMetaDataValue(extensionValues,
+                                                                    "elementname");
+                            if ("Roger".equals(elementname)) {
+                                AppUtils.setMetaDataValue(extensionValues,
+                                                          "elementname",
+                                                          "<![CDATA[Roger]]>");
+                                GWT.log("SET CUSTOM ROGER NAME");
+                            }
+                        } else {
+                            GWT.log("EXTENSION VALUES NOT FOUND");
+                        }
+                    } else {
+                        GWT.log("TASK NOT FOUND");
+                    }
+                }
+            }
+
+            private void testGetTaskName() {
+                if (null != lastRoot) {
+                    TaskImpl task = getTask();
+                    if (null != task) {
+                        String elementname = "";
+                        EList<ExtensionAttributeValue> extensionValues = task.getExtensionValues();
+                        if (null != extensionValues) {
+                            elementname = AppUtils.getMetaDataValue(extensionValues, "elementname");
+                        } else {
+                            GWT.log("EXTENSION VALUES NOT FOUND");
+                        }
+                        String defaultName = task.getName();
+                        GWT.log("FOUND TASK \"" + elementname + "\" [" + defaultName + "]");
+                    } else {
+                        GWT.log("TASK NOT FOUND");
+                    }
+                }
+            }
         }
 
         // Add a handler to send the name to the server
@@ -146,11 +207,8 @@ public class App implements EntryPoint {
     }
 
     private void onTestButtonClick() {
-        // parseSomeXml();
-        String wildcards = "##other";
-        for (String wildcard : wildcards.split(",")) {
-            GWT.log("WILDCARD = " + wildcard);
-        }
+        parseSomeXml();
+        // testWidcards();
     }
 
     private void parseSomeXml() {
@@ -160,17 +218,126 @@ public class App implements EntryPoint {
         Element definitions = document.createElement("bpmn2:definitions");
         document.appendChild(definitions);
 
+        CDATASection cdataSection = document.createCDATASection("Roger");
+
         Node itemDefinition1 = document.createElement("bpmn2:itemDefinition");
-        itemDefinition1.setNodeValue("itemDefinition1_value");
+        itemDefinition1.appendChild(cdataSection);
         definitions.appendChild(itemDefinition1);
 
         Element itemDefinition2 = document.createElement("bpmn2:itemDefinition");
         itemDefinition2.setAttribute("id", "itemDefinition2_id");
-        definitions.appendChild(itemDefinition2);
+        // definitions.appendChild(itemDefinition2);
 
         String raw = document.toString();
         GWT.log(raw);
     }
+
+    private void testWidcards() {
+        String wildcards = "##other";
+        for (String wildcard : wildcards.split(",")) {
+            GWT.log("WILDCARD = " + wildcard);
+        }
+    }
+
+    private static final String ROGER_SIMPLE_TASK = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<bpmn2:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://www.omg.org/bpmn20\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:bpsim=\"http://www.bpsim.org/schemas/1.0\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:di=\"http://www.omg.org/spec/DD/20100524/DI\" xmlns:drools=\"http://www.jboss.org/drools\" id=\"_QOR7YL1bEemklfN0FVFxEQ\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd http://www.jboss.org/drools drools.xsd http://www.bpsim.org/schemas/1.0 bpsim.xsd http://www.omg.org/spec/DD/20100524/DC DC.xsd http://www.omg.org/spec/DD/20100524/DI DI.xsd \" exporter=\"jBPM Process Modeler\" exporterVersion=\"2.0\" targetNamespace=\"http://www.omg.org/bpmn20\">\n" +
+            "  <bpmn2:process id=\"NewBPMN2diagram\" drools:version=\"1.0\" drools:adHoc=\"false\" name=\"_1EE4530F-6180-460E-9F74-E24C5F0246F7\" isExecutable=\"true\">\n" +
+            "    <bpmn2:sequenceFlow id=\"_D3E9B654-7666-430D-9577-0FEA6EFEF4F0\" sourceRef=\"_2C406A8C-6306-416A-AFE1-0E29060ABE4B\" targetRef=\"_BD83D7BF-3827-427F-9B9F-CD125612A799\">\n" +
+            "      <bpmn2:extensionElements>\n" +
+            "        <drools:metaData name=\"isAutoConnection.source\">\n" +
+            "          <drools:metaValue><![CDATA[true]]></drools:metaValue>\n" +
+            "        </drools:metaData>\n" +
+            "        <drools:metaData name=\"isAutoConnection.target\">\n" +
+            "          <drools:metaValue><![CDATA[true]]></drools:metaValue>\n" +
+            "        </drools:metaData>\n" +
+            "      </bpmn2:extensionElements>\n" +
+            "    </bpmn2:sequenceFlow>\n" +
+            "    <bpmn2:sequenceFlow id=\"_28D3A0BD-B346-46A9-A073-5128A1A908B7\" sourceRef=\"_BD83D7BF-3827-427F-9B9F-CD125612A799\" targetRef=\"_ACDFE5C5-3283-4B63-8F08-BB129D0D002F\">\n" +
+            "      <bpmn2:extensionElements>\n" +
+            "        <drools:metaData name=\"isAutoConnection.source\">\n" +
+            "          <drools:metaValue><![CDATA[true]]></drools:metaValue>\n" +
+            "        </drools:metaData>\n" +
+            "        <drools:metaData name=\"isAutoConnection.target\">\n" +
+            "          <drools:metaValue><![CDATA[true]]></drools:metaValue>\n" +
+            "        </drools:metaData>\n" +
+            "      </bpmn2:extensionElements>\n" +
+            "    </bpmn2:sequenceFlow>\n" +
+            "    <bpmn2:task id=\"_BD83D7BF-3827-427F-9B9F-CD125612A799\" name=\"Roger\">\n" +
+            "      <bpmn2:extensionElements>\n" +
+            "        <drools:metaData name=\"elementname\">\n" +
+            "          <drools:metaValue><![CDATA[Roger]]></drools:metaValue>\n" +
+            "        </drools:metaData>\n" +
+            "      </bpmn2:extensionElements>\n" +
+            "      <bpmn2:incoming>_D3E9B654-7666-430D-9577-0FEA6EFEF4F0</bpmn2:incoming>\n" +
+            "      <bpmn2:outgoing>_28D3A0BD-B346-46A9-A073-5128A1A908B7</bpmn2:outgoing>\n" +
+            "    </bpmn2:task>\n" +
+            "    <bpmn2:startEvent id=\"_2C406A8C-6306-416A-AFE1-0E29060ABE4B\">\n" +
+            "      <bpmn2:outgoing>_D3E9B654-7666-430D-9577-0FEA6EFEF4F0</bpmn2:outgoing>\n" +
+            "    </bpmn2:startEvent>\n" +
+            "    <bpmn2:endEvent id=\"_ACDFE5C5-3283-4B63-8F08-BB129D0D002F\">\n" +
+            "      <bpmn2:incoming>_28D3A0BD-B346-46A9-A073-5128A1A908B7</bpmn2:incoming>\n" +
+            "    </bpmn2:endEvent>\n" +
+            "  </bpmn2:process>\n" +
+            "  <bpmndi:BPMNDiagram id=\"_QOR7Yb1bEemklfN0FVFxEQ\">\n" +
+            "    <bpmndi:BPMNPlane id=\"_QOR7Yr1bEemklfN0FVFxEQ\" bpmnElement=\"NewBPMN2diagram\">\n" +
+            "      <bpmndi:BPMNShape id=\"shape__ACDFE5C5-3283-4B63-8F08-BB129D0D002F\" bpmnElement=\"_ACDFE5C5-3283-4B63-8F08-BB129D0D002F\">\n" +
+            "        <dc:Bounds height=\"56.0\" width=\"56.0\" x=\"470.0\" y=\"100.0\"/>\n" +
+            "      </bpmndi:BPMNShape>\n" +
+            "      <bpmndi:BPMNShape id=\"shape__2C406A8C-6306-416A-AFE1-0E29060ABE4B\" bpmnElement=\"_2C406A8C-6306-416A-AFE1-0E29060ABE4B\">\n" +
+            "        <dc:Bounds height=\"56.0\" width=\"56.0\" x=\"100.0\" y=\"100.0\"/>\n" +
+            "      </bpmndi:BPMNShape>\n" +
+            "      <bpmndi:BPMNShape id=\"shape__BD83D7BF-3827-427F-9B9F-CD125612A799\" bpmnElement=\"_BD83D7BF-3827-427F-9B9F-CD125612A799\">\n" +
+            "        <dc:Bounds height=\"102.0\" width=\"154.0\" x=\"236.0\" y=\"77.0\"/>\n" +
+            "      </bpmndi:BPMNShape>\n" +
+            "      <bpmndi:BPMNEdge id=\"edge_shape__BD83D7BF-3827-427F-9B9F-CD125612A799_to_shape__ACDFE5C5-3283-4B63-8F08-BB129D0D002F\" bpmnElement=\"_28D3A0BD-B346-46A9-A073-5128A1A908B7\">\n" +
+            "        <di:waypoint xsi:type=\"dc:Point\" x=\"390.0\" y=\"128.0\"/>\n" +
+            "        <di:waypoint xsi:type=\"dc:Point\" x=\"470.0\" y=\"128.0\"/>\n" +
+            "      </bpmndi:BPMNEdge>\n" +
+            "      <bpmndi:BPMNEdge id=\"edge_shape__2C406A8C-6306-416A-AFE1-0E29060ABE4B_to_shape__BD83D7BF-3827-427F-9B9F-CD125612A799\" bpmnElement=\"_D3E9B654-7666-430D-9577-0FEA6EFEF4F0\">\n" +
+            "        <di:waypoint xsi:type=\"dc:Point\" x=\"156.0\" y=\"128.0\"/>\n" +
+            "        <di:waypoint xsi:type=\"dc:Point\" x=\"236.0\" y=\"128.0\"/>\n" +
+            "      </bpmndi:BPMNEdge>\n" +
+            "    </bpmndi:BPMNPlane>\n" +
+            "  </bpmndi:BPMNDiagram>\n" +
+            "  <bpmn2:relationship id=\"_QOR7Y71bEemklfN0FVFxEQ\" type=\"BPSimData\">\n" +
+            "    <bpmn2:extensionElements>\n" +
+            "      <bpsim:BPSimData>\n" +
+            "        <bpsim:Scenario xsi:type=\"bpsim:Scenario\" id=\"default\" name=\"Simulationscenario\">\n" +
+            "          <bpsim:ScenarioParameters xsi:type=\"bpsim:ScenarioParameters\"/>\n" +
+            "          <bpsim:ElementParameters xsi:type=\"bpsim:ElementParameters\" elementRef=\"_2C406A8C-6306-416A-AFE1-0E29060ABE4B\" id=\"_QOSicL1bEemklfN0FVFxEQ\">\n" +
+            "            <bpsim:TimeParameters xsi:type=\"bpsim:TimeParameters\">\n" +
+            "              <bpsim:ProcessingTime xsi:type=\"bpsim:Parameter\">\n" +
+            "                <bpsim:NormalDistribution mean=\"0.0\" standardDeviation=\"0.0\"/>\n" +
+            "              </bpsim:ProcessingTime>\n" +
+            "            </bpsim:TimeParameters>\n" +
+            "          </bpsim:ElementParameters>\n" +
+            "          <bpsim:ElementParameters xsi:type=\"bpsim:ElementParameters\" elementRef=\"_BD83D7BF-3827-427F-9B9F-CD125612A799\" id=\"_QOSicb1bEemklfN0FVFxEQ\">\n" +
+            "            <bpsim:TimeParameters xsi:type=\"bpsim:TimeParameters\">\n" +
+            "              <bpsim:ProcessingTime xsi:type=\"bpsim:Parameter\">\n" +
+            "                <bpsim:NormalDistribution mean=\"0.0\" standardDeviation=\"0.0\"/>\n" +
+            "              </bpsim:ProcessingTime>\n" +
+            "            </bpsim:TimeParameters>\n" +
+            "            <bpsim:ResourceParameters xsi:type=\"bpsim:ResourceParameters\">\n" +
+            "              <bpsim:Availability xsi:type=\"bpsim:Parameter\">\n" +
+            "                <bpsim:FloatingParameter value=\"0.0\"/>\n" +
+            "              </bpsim:Availability>\n" +
+            "              <bpsim:Quantity xsi:type=\"bpsim:Parameter\">\n" +
+            "                <bpsim:FloatingParameter value=\"0.0\"/>\n" +
+            "              </bpsim:Quantity>\n" +
+            "            </bpsim:ResourceParameters>\n" +
+            "            <bpsim:CostParameters xsi:type=\"bpsim:CostParameters\">\n" +
+            "              <bpsim:UnitCost xsi:type=\"bpsim:Parameter\">\n" +
+            "                <bpsim:FloatingParameter value=\"0.0\"/>\n" +
+            "              </bpsim:UnitCost>\n" +
+            "            </bpsim:CostParameters>\n" +
+            "          </bpsim:ElementParameters>\n" +
+            "        </bpsim:Scenario>\n" +
+            "      </bpsim:BPSimData>\n" +
+            "    </bpmn2:extensionElements>\n" +
+            "    <bpmn2:source>_QOR7YL1bEemklfN0FVFxEQ</bpmn2:source>\n" +
+            "    <bpmn2:target>_QOR7YL1bEemklfN0FVFxEQ</bpmn2:target>\n" +
+            "  </bpmn2:relationship>\n" +
+            "</bpmn2:definitions>";
 
     private static final String SIMPLE_PROCESS = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<bpmn2:definitions xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns=\"http://www.omg.org/bpmn20\" xmlns:bpmn2=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:bpmndi=\"http://www.omg.org/spec/BPMN/20100524/DI\" xmlns:bpsim=\"http://www.bpsim.org/schemas/1.0\" xmlns:dc=\"http://www.omg.org/spec/DD/20100524/DC\" xmlns:drools=\"http://www.jboss.org/drools\" id=\"_GUUj8KUCEemjtN0xRqbezg\" xsi:schemaLocation=\"http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd http://www.jboss.org/drools drools.xsd http://www.bpsim.org/schemas/1.0 bpsim.xsd http://www.omg.org/spec/DD/20100524/DC DC.xsd http://www.omg.org/spec/DD/20100524/DI DI.xsd \" exporter=\"jBPM Process Modeler\" exporterVersion=\"2.0\" targetNamespace=\"http://www.omg.org/bpmn20\">\n" +
